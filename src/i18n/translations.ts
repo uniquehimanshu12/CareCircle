@@ -355,6 +355,28 @@ export interface TranslationDictionary {
     browserEnabledTitle: string;
     browserEnabledBody: string;
     emailPipelineTitle: string;
+    emailStatusConnected: string;
+    emailStatusIssue: string;
+    emailStatusNotConfigured: string;
+    emailDescConnected: string;
+    emailDescIssue: string;
+    emailDescNotConfigured: string;
+    developerDiagnosticsTitle: string;
+    developerDiagnosticsSubtitle: string;
+    diagnosticsHostLabel: string;
+    diagnosticsPortLabel: string;
+    diagnosticsAuthLabel: string;
+    diagnosticsSenderLabel: string;
+    diagnosticsDetected: string;
+    diagnosticsNotDetected: string;
+    diagnosticsDefaultPort: string;
+    diagnosticsDefaultSender: string;
+    diagnosticsToggleShow: string;
+    diagnosticsToggleHide: string;
+    whatsappComingSoonTitle: string;
+    whatsappComingSoonBadge: string;
+    whatsappComingSoonDesc: string;
+    whatsappPrivacyNoteClean: string;
     reverifySmtp: string;
     smtpVerifiedMsg: string;
     smtpFailedMsg: string;
@@ -903,7 +925,35 @@ export const TRANSLATIONS: Record<AppLanguage, TranslationDictionary> = {
       enableBrowser: 'Enable Browser Notifications',
       browserEnabledTitle: 'CareCircle Alerts Enabled',
       browserEnabledBody: 'Browser reminders are now active.',
-      emailPipelineTitle: 'Backend Email Pipeline Status',
+      emailPipelineTitle: 'Email Notifications',
+      emailStatusConnected: 'Connected',
+      emailStatusIssue: 'Connection issue',
+      emailStatusNotConfigured: 'Not configured',
+      emailDescConnected:
+        'Email service is connected. CareCircle can dispatch medication alerts and circle updates.',
+      emailDescIssue:
+        'Email service is configured, but unable to connect to the outgoing mail server.',
+      emailDescNotConfigured:
+        'Email delivery is not configured on this instance. Circle members will receive notifications through in-app and browser alerts.',
+      developerDiagnosticsTitle: 'Developer & SMTP Diagnostics',
+      developerDiagnosticsSubtitle:
+        'Technical mail pipeline checks and delivery tests (authorized circle managers only).',
+      diagnosticsHostLabel: 'Mail Host',
+      diagnosticsPortLabel: 'Port',
+      diagnosticsAuthLabel: 'Authentication',
+      diagnosticsSenderLabel: 'Sender Address',
+      diagnosticsDetected: 'Detected',
+      diagnosticsNotDetected: 'Not detected',
+      diagnosticsDefaultPort: 'Standard (587)',
+      diagnosticsDefaultSender: 'System default',
+      diagnosticsToggleShow: 'Show technical diagnostics',
+      diagnosticsToggleHide: 'Hide technical diagnostics',
+      whatsappComingSoonTitle: 'WhatsApp Notifications',
+      whatsappComingSoonBadge: 'Coming soon',
+      whatsappComingSoonDesc:
+        'WhatsApp notifications are not currently available. CareCircle will support official WhatsApp alerts once direct integration is launched.',
+      whatsappPrivacyNoteClean:
+        'CareCircle will never include detailed prescriptions or sensitive medical histories in WhatsApp alerts—only safe reminder prompts.',
       reverifySmtp: 'Re-verify SMTP',
       smtpVerifiedMsg: 'SMTP connection and authentication verified on backend.',
       smtpFailedMsg: 'SMTP configured, verification failed:',
@@ -1469,7 +1519,35 @@ export const TRANSLATIONS: Record<AppLanguage, TranslationDictionary> = {
       enableBrowser: 'ब्राउज़र सूचनाएं चालू करें',
       browserEnabledTitle: 'CareCircle अलर्ट चालू',
       browserEnabledBody: 'अब आपको इस ब्राउज़र पर समय-समय पर याद दिलाया जाएगा।',
-      emailPipelineTitle: 'बैकएंड ईमेल सेवा की स्थिति',
+      emailPipelineTitle: 'ईमेल सूचनाएं',
+      emailStatusConnected: 'जुड़ा हुआ',
+      emailStatusIssue: 'कनेक्शन में समस्या',
+      emailStatusNotConfigured: 'कॉन्फ़िगर नहीं है',
+      emailDescConnected:
+        'ईमेल सेवा सक्रिय है। CareCircle दवाई और सर्कल से जुड़े अलर्ट सदस्यों को भेज सकता है।',
+      emailDescIssue:
+        'ईमेल सेवा सेट है, लेकिन आउटगोइंग मेल सर्वर से जुड़ने में समस्या आ रही है।',
+      emailDescNotConfigured:
+        'इस ऐप पर ईमेल सेवा सेट नहीं है। सदस्य इन-ऐप और ब्राउज़र अलर्ट के माध्यम से सूचनाएं प्राप्त करते रहेंगे।',
+      developerDiagnosticsTitle: 'डेवलपर और SMTP डायग्नोस्टिक्स',
+      developerDiagnosticsSubtitle:
+        'तकनीकी मेल सेवा जांच और टेस्ट ईमेल (केवल अधिकृत प्रबंधकों के लिए)।',
+      diagnosticsHostLabel: 'मेल होस्ट',
+      diagnosticsPortLabel: 'पोर्ट',
+      diagnosticsAuthLabel: 'प्रमाणीकरण',
+      diagnosticsSenderLabel: 'प्रेषक पता',
+      diagnosticsDetected: 'उपलब्ध',
+      diagnosticsNotDetected: 'अनुपलब्ध',
+      diagnosticsDefaultPort: 'मानक (587)',
+      diagnosticsDefaultSender: 'सिस्टम डिफ़ॉल्ट',
+      diagnosticsToggleShow: 'तकनीकी डायग्नोस्टिक्स देखें',
+      diagnosticsToggleHide: 'तकनीकी डायग्नोस्टिक्स छिपाएं',
+      whatsappComingSoonTitle: 'WhatsApp सूचनाएं',
+      whatsappComingSoonBadge: 'जल्द आ रहा है',
+      whatsappComingSoonDesc:
+        'WhatsApp सूचनाएं अभी उपलब्ध नहीं हैं। सीधा एकीकरण शुरू होने पर CareCircle आधिकारिक WhatsApp अलर्ट का समर्थन करेगा।',
+      whatsappPrivacyNoteClean:
+        'CareCircle कभी भी WhatsApp संदेशों में पूरी दवाई सूची या संवेदनशील मेडिकल विवरण नहीं भेजेगा—केवल सुरक्षित रिमाइंडर भेजे जाएंगे।',
       reverifySmtp: 'SMTP फिर से जांचें',
       smtpVerifiedMsg: 'ईमेल सेवा (SMTP) सर्वर पर सही से जुड़ी और प्रमाणित है।',
       smtpFailedMsg: 'SMTP सेटिंग मिली, पर जांच विफल रही:',

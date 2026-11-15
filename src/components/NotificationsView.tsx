@@ -1,8 +1,12 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import {
+  AlertTriangle,
   Bell,
   Check,
   CheckCircle2,
+  ChevronDown,
+  ChevronUp,
+  Info,
   Mail,
   MessageCircle,
   RefreshCw,
@@ -100,6 +104,7 @@ export function NotificationsView({
 
   const [runningScheduleCheck, setRunningScheduleCheck] = useState(false);
   const [reminderRunResult, setReminderRunResult] = useState<ReminderRunResult | null>(null);
+  const [showDiagnostics, setShowDiagnostics] = useState(false);
 
   const [browserPerm, setBrowserPerm] = useState<string>(
     typeof Notification !== 'undefined' ? Notification.permission : 'unsupported'
@@ -507,333 +512,213 @@ export function NotificationsView({
         </div>
       </div>
 
-      {/* Truthful SMTP Email Backend Verification & Test Email */}
-      <section className="rounded-xl border border-[#E4DFD5] bg-white p-6 space-y-5">
+      {/* Email Notifications: Clean Status & Management */}
+      <section className="rounded-xl border border-[#E4DFD5] bg-white p-6 space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#E4DFD5] pb-3">
-          <div className="flex items-center gap-2">
-            {smtpStatus?.smtpVerified ? (
-              <CheckCircle2 className="h-5 w-5 text-[#1E6F5C]" aria-hidden="true" />
-            ) : (
-              <Mail className="h-5 w-5 text-[#334E68]" aria-hidden="true" />
-            )}
+          <div className="flex items-center gap-2.5">
+            <Mail className="h-5 w-5 text-[#1E6F5C]" aria-hidden="true" />
             <h2 className="font-display text-lg font-bold text-[#10233D]">
               {t.notifications.emailPipelineTitle}
             </h2>
           </div>
 
-          <button
-            type="button"
-            disabled={checkingSmtp}
-            onClick={() => void loadSmtpStatus()}
-            className="min-h-[40px] inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[#E4DFD5] bg-[#FAF8F5] hover:bg-[#F3EFE8] text-xs font-semibold text-[#10233D] cursor-pointer"
-          >
-            <RefreshCw className={`h-3.5 w-3.5 ${checkingSmtp ? 'animate-spin' : ''}`} aria-hidden="true" />
-            <span>{t.notifications.reverifySmtp}</span>
-          </button>
-        </div>
-
-        {smtpStatus ? (
-          <div className="space-y-4">
-            <div
-              className={`rounded-lg border px-4 py-3 text-sm flex items-start gap-2.5 ${
+          {smtpStatus ? (
+            <span
+              className={`px-3 py-1 rounded-full border text-xs font-semibold inline-flex items-center gap-1.5 ${
                 smtpStatus.smtpVerified
                   ? 'border-[#CBE5DB] bg-[#EBF5F1] text-[#1E6F5C]'
-                  : 'border-[#F6D3BA] bg-[#FDF2EA] text-[#B54708]'
+                  : smtpStatus.smtpConfigured
+                    ? 'border-[#F6D3BA] bg-[#FDF2EA] text-[#B54708]'
+                    : 'border-[#E4DFD5] bg-[#FAF8F5] text-[#5B728A]'
               }`}
             >
               {smtpStatus.smtpVerified ? (
-                <CheckCircle2 className="h-4 w-4 shrink-0 mt-0.5" aria-hidden="true" />
+                <>
+                  <CheckCircle2 className="h-3.5 w-3.5" aria-hidden="true" />
+                  <span>{t.notifications.emailStatusConnected}</span>
+                </>
+              ) : smtpStatus.smtpConfigured ? (
+                <>
+                  <AlertTriangle className="h-3.5 w-3.5" aria-hidden="true" />
+                  <span>{t.notifications.emailStatusIssue}</span>
+                </>
               ) : (
-                <ShieldAlert className="h-4 w-4 shrink-0 mt-0.5" aria-hidden="true" />
+                <>
+                  <Info className="h-3.5 w-3.5" aria-hidden="true" />
+                  <span>{t.notifications.emailStatusNotConfigured}</span>
+                </>
               )}
-              <div>
-                <div className="font-semibold">
-                  {smtpStatus.smtpVerified
-                    ? t.notifications.smtpVerifiedMsg
-                    : smtpStatus.smtpConfigured
-                      ? `${t.notifications.smtpFailedMsg} ${smtpStatus.smtpError}`
-                      : t.notifications.smtpUnconfiguredMsg}
-                </div>
-                <div className="mt-1 text-xs font-mono-code">
-                  {t.notifications.envDetectedLabel} HOST: {smtpStatus.envPresence.SMTP_HOST ? t.common.yes : t.common.no} · PORT:{' '}
-                  {smtpStatus.envPresence.SMTP_PORT ? t.common.yes : t.notifications.envDefaultPort} · USER:{' '}
-                  {smtpStatus.envPresence.SMTP_USER ? t.common.yes : t.common.no} · PASS:{' '}
-                  {smtpStatus.envPresence.SMTP_PASS ? t.common.yes : t.common.no} · FROM:{' '}
-                  {smtpStatus.envPresence.SMTP_FROM ? t.common.yes : t.notifications.envDefaultFrom}
-                </div>
-              </div>
-            </div>
+            </span>
+          ) : (
+            <span className="text-xs text-[#5B728A]">{t.notifications.checkingSmtp}</span>
+          )}
+        </div>
 
-            <form
-              onSubmit={handleSendTestEmail}
-              className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3"
+        <p className="text-sm text-[#334E68]">
+          {smtpStatus?.smtpVerified
+            ? t.notifications.emailDescConnected
+            : smtpStatus?.smtpConfigured
+              ? t.notifications.emailDescIssue
+              : t.notifications.emailDescNotConfigured}
+        </p>
+
+        {/* Admin/Developer diagnostics area (only for managers: primary_caregiver / caretaker) */}
+        {canManage && smtpStatus && (
+          <div className="pt-3 border-t border-[#E4DFD5]">
+            <button
+              type="button"
+              onClick={() => setShowDiagnostics((prev) => !prev)}
+              className="text-xs font-semibold text-[#5B728A] hover:text-[#10233D] inline-flex items-center gap-1.5 cursor-pointer focus-visible:outline-2 focus-visible:outline-[#1E6F5C]"
             >
-              <input
-                type="email"
-                required
-                aria-label={t.notifications.testEmailPlaceholder}
-                value={testEmailRecipient}
-                onChange={(e) => setTestEmailRecipient(e.target.value)}
-                placeholder={t.notifications.testEmailPlaceholder}
-                className="flex-1 min-h-[44px] rounded-lg border border-[#E4DFD5] bg-[#FAF8F5] px-3.5 py-2 text-sm text-[#10233D]"
-              />
-              <button
-                type="submit"
-                disabled={sendingTestEmail || !smtpStatus.smtpVerified}
-                className="min-h-[44px] inline-flex items-center justify-center gap-2 px-5 py-2 rounded-lg bg-[#1E6F5C] hover:bg-[#175849] text-white text-sm font-semibold disabled:opacity-50 whitespace-nowrap shrink-0 cursor-pointer"
-              >
-                <Send className="h-4 w-4" aria-hidden="true" />
-                <span>{sendingTestEmail ? t.notifications.sendingTest : t.notifications.sendTestEmail}</span>
-              </button>
-              <button
-                type="button"
-                disabled={runningScheduleCheck || !smtpStatus.smtpVerified}
-                onClick={() => void handleRunRemindersNow()}
-                className="min-h-[44px] inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg border border-[#E4DFD5] bg-white hover:bg-[#FAF8F5] text-sm font-semibold text-[#10233D] disabled:opacity-50 whitespace-nowrap shrink-0 cursor-pointer"
-              >
-                <span>
-                  {runningScheduleCheck
-                    ? t.notifications.checkingReminders
-                    : t.notifications.runReminderCheck}
-                </span>
-              </button>
-            </form>
+              {showDiagnostics ? (
+                <ChevronUp className="h-4 w-4" aria-hidden="true" />
+              ) : (
+                <ChevronDown className="h-4 w-4" aria-hidden="true" />
+              )}
+              <span>
+                {showDiagnostics
+                  ? t.notifications.diagnosticsToggleHide
+                  : t.notifications.diagnosticsToggleShow}
+              </span>
+            </button>
 
-            {testEmailResult && (
-              <div className="rounded-lg border border-[#CBE5DB] bg-[#EBF5F1] px-4 py-3 text-sm text-[#1E6F5C]">
-                {testEmailResult}
-              </div>
-            )}
-
-            {reminderRunResult && (
-              <div className="rounded-lg border border-[#E4DFD5] bg-[#FAF8F5] p-4 text-sm space-y-1.5">
-                <div className="font-semibold text-[#10233D]">
-                  {t.notifications.reminderEvalSummary}{' '}
-                  {formatNumberLocalized(reminderRunResult.evaluated, lang)} ·{' '}
-                  {formatNumberLocalized(reminderRunResult.sent, lang)} ·{' '}
-                  {formatNumberLocalized(reminderRunResult.skipped, lang)}
-                </div>
-                {reminderRunResult.results.map((r) => (
-                  <div key={r.key} className="text-xs text-[#334E68]">
-                    [{r.type}] {r.title} — <strong>{r.status}</strong> ({r.details})
+            {showDiagnostics && (
+              <div className="mt-3 p-4 rounded-lg bg-[#FAF8F5] border border-[#E4DFD5] space-y-4">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div>
+                    <h3 className="text-xs font-bold uppercase tracking-wider text-[#10233D]">
+                      {t.notifications.developerDiagnosticsTitle}
+                    </h3>
+                    <p className="text-xs text-[#5B728A]">
+                      {t.notifications.developerDiagnosticsSubtitle}
+                    </p>
                   </div>
-                ))}
+
+                  <button
+                    type="button"
+                    disabled={checkingSmtp}
+                    onClick={() => void loadSmtpStatus()}
+                    className="min-h-[36px] inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[#E4DFD5] bg-white hover:bg-[#F3EFE8] text-xs font-semibold text-[#10233D] cursor-pointer"
+                  >
+                    <RefreshCw className={`h-3.5 w-3.5 ${checkingSmtp ? 'animate-spin' : ''}`} aria-hidden="true" />
+                    <span>{t.notifications.reverifySmtp}</span>
+                  </button>
+                </div>
+
+                {/* Sanitized server health summary — NO raw environment variable names */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs">
+                  <div className="p-2.5 rounded bg-white border border-[#E4DFD5]">
+                    <span className="text-[#5B728A] block">{t.notifications.diagnosticsHostLabel}</span>
+                    <span className="font-medium text-[#10233D]">
+                      {smtpStatus.envPresence.SMTP_HOST ? t.notifications.diagnosticsDetected : t.notifications.diagnosticsNotDetected}
+                    </span>
+                  </div>
+                  <div className="p-2.5 rounded bg-white border border-[#E4DFD5]">
+                    <span className="text-[#5B728A] block">{t.notifications.diagnosticsPortLabel}</span>
+                    <span className="font-medium text-[#10233D]">
+                      {smtpStatus.envPresence.SMTP_PORT ? t.common.yes : t.notifications.diagnosticsDefaultPort}
+                    </span>
+                  </div>
+                  <div className="p-2.5 rounded bg-white border border-[#E4DFD5]">
+                    <span className="text-[#5B728A] block">{t.notifications.diagnosticsAuthLabel}</span>
+                    <span className="font-medium text-[#10233D]">
+                      {smtpStatus.envPresence.SMTP_USER && smtpStatus.envPresence.SMTP_PASS ? t.notifications.diagnosticsDetected : t.notifications.diagnosticsNotDetected}
+                    </span>
+                  </div>
+                  <div className="p-2.5 rounded bg-white border border-[#E4DFD5]">
+                    <span className="text-[#5B728A] block">{t.notifications.diagnosticsSenderLabel}</span>
+                    <span className="font-medium text-[#10233D]">
+                      {smtpStatus.envPresence.SMTP_FROM ? t.notifications.diagnosticsDetected : t.notifications.diagnosticsDefaultSender}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Test Email Form */}
+                <form
+                  onSubmit={handleSendTestEmail}
+                  className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 pt-2 border-t border-[#E4DFD5]"
+                >
+                  <input
+                    type="email"
+                    required
+                    aria-label={t.notifications.testEmailPlaceholder}
+                    value={testEmailRecipient}
+                    onChange={(e) => setTestEmailRecipient(e.target.value)}
+                    placeholder={t.notifications.testEmailPlaceholder}
+                    className="flex-1 min-h-[40px] rounded-lg border border-[#E4DFD5] bg-white px-3.5 py-1.5 text-xs text-[#10233D]"
+                  />
+                  <button
+                    type="submit"
+                    disabled={sendingTestEmail || !smtpStatus.smtpVerified}
+                    className="min-h-[40px] inline-flex items-center justify-center gap-1.5 px-4 py-1.5 rounded-lg bg-[#1E6F5C] hover:bg-[#175849] text-white text-xs font-semibold disabled:opacity-50 whitespace-nowrap shrink-0 cursor-pointer"
+                  >
+                    <Send className="h-3.5 w-3.5" aria-hidden="true" />
+                    <span>{sendingTestEmail ? t.notifications.sendingTest : t.notifications.sendTestEmail}</span>
+                  </button>
+                  <button
+                    type="button"
+                    disabled={runningScheduleCheck || !smtpStatus.smtpVerified}
+                    onClick={() => void handleRunRemindersNow()}
+                    className="min-h-[40px] inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg border border-[#E4DFD5] bg-white hover:bg-[#FAF8F5] text-xs font-semibold text-[#10233D] disabled:opacity-50 whitespace-nowrap shrink-0 cursor-pointer"
+                  >
+                    <span>
+                      {runningScheduleCheck
+                        ? t.notifications.checkingReminders
+                        : t.notifications.runReminderCheck}
+                    </span>
+                  </button>
+                </form>
+
+                {testEmailResult && (
+                  <div className="rounded-lg border border-[#CBE5DB] bg-[#EBF5F1] px-3.5 py-2.5 text-xs text-[#1E6F5C]">
+                    {testEmailResult}
+                  </div>
+                )}
+
+                {reminderRunResult && (
+                  <div className="rounded-lg border border-[#E4DFD5] bg-white p-3 text-xs space-y-1">
+                    <div className="font-semibold text-[#10233D]">
+                      {t.notifications.reminderEvalSummary}{' '}
+                      {formatNumberLocalized(reminderRunResult.evaluated, lang)} ·{' '}
+                      {formatNumberLocalized(reminderRunResult.sent, lang)} ·{' '}
+                      {formatNumberLocalized(reminderRunResult.skipped, lang)}
+                    </div>
+                    {reminderRunResult.results.map((r) => (
+                      <div key={r.key} className="text-[#334E68]">
+                        [{r.type}] {r.title} — <strong>{r.status}</strong> ({r.details})
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
           </div>
-        ) : (
-          <p className="text-sm text-[#5B728A]">{t.notifications.checkingSmtp}</p>
         )}
       </section>
 
-      {/* Official Meta WhatsApp Cloud API Assessment & Preferences */}
-      <section className="rounded-xl border border-[#E4DFD5] bg-white p-6 space-y-5">
+      {/* WhatsApp Notifications: Clean Status */}
+      <section className="rounded-xl border border-[#E4DFD5] bg-white p-6 space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#E4DFD5] pb-3">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2.5">
             <MessageCircle className="h-5 w-5 text-[#1E6F5C]" aria-hidden="true" />
             <h2 className="font-display text-lg font-bold text-[#10233D]">
-              {t.notifications.whatsappTitle}
+              {t.notifications.whatsappComingSoonTitle}
             </h2>
           </div>
 
-          <span
-            className={`px-3 py-1 rounded-md border text-xs font-bold ${
-              waStatus?.dispatchEnabled
-                ? 'border-[#CBE5DB] bg-[#EBF5F1] text-[#1E6F5C]'
-                : 'border-[#F6D3BA] bg-[#FDF2EA] text-[#B54708]'
-            }`}
-          >
-            {waStatus?.dispatchEnabled
-              ? t.notifications.whatsappBadgeConfigured
-              : t.notifications.whatsappBadgeNotConfigured}
+          <span className="px-3 py-1 rounded-full border border-[#E4DFD5] bg-[#FAF8F5] text-xs font-semibold text-[#5B728A]">
+            {t.notifications.whatsappComingSoonBadge}
           </span>
         </div>
 
-        {(!waStatus?.configured || waStatus?.dispatchEnabled === false) && (
-          <div className="rounded-lg border border-[#F6D3BA] bg-[#FDF2EA] p-4 space-y-2.5 text-sm text-[#334E68]">
-            <p className="font-semibold text-[#B54708]">
-              {waStatus?.dispatchEnabled === false && waStatus?.configured
-                ? t.notifications.whatsappDisabledNotice
-                : t.notifications.whatsappNotConfiguredDesc}
-            </p>
-            {waStatus?.dispatchEnabled === false && !waStatus?.configured && (
-              <p className="text-xs sm:text-sm text-[#334E68]">{t.notifications.whatsappDisabledNotice}</p>
-            )}
-            {!waStatus?.configured && (
-              <div>
-                <div className="font-semibold text-[#10233D]">
-                  {t.notifications.whatsappConfigChecklistTitle}
-                </div>
-                <ul className="list-disc pl-5 mt-1 space-y-1 text-xs sm:text-sm">
-                  {t.notifications.whatsappRequirements.map((req, idx) => (
-                    <li key={idx}>{req}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
-          </div>
-        )}
-
-        <p className="text-xs sm:text-sm text-[#5B728A] bg-[#FAF8F5] border border-[#E4DFD5] rounded-lg px-3.5 py-2.5">
-          {t.notifications.whatsappPrivacyNote}
-        </p>
-
-        {waPrefs.optedOut && (
-          <div className="rounded-lg border border-[#FECDCA] bg-[#FEF3F2] px-4 py-3 text-sm font-medium text-[#B42318]">
-            {t.notifications.whatsappOptedOutBanner}
-          </div>
-        )}
-
-        {waFeedback && (
-          <div className="rounded-lg border border-[#CBE5DB] bg-[#EBF5F1] px-4 py-3 text-sm font-medium text-[#1E6F5C]">
-            {waFeedback}
-          </div>
-        )}
-
-        {waError && (
-          <div
-            role="alert"
-            className="rounded-lg border border-[#FECDCA] bg-[#FEF3F2] px-4 py-3 text-sm text-[#B42318]"
-          >
-            {waError}
-          </div>
-        )}
-
-        <form onSubmit={handleSaveWhatsAppPrefs} className="space-y-4">
-          <div>
-            <label htmlFor="wa-phone-input" className="block text-sm font-semibold text-[#10233D] mb-1.5">
-              {t.notifications.whatsappPhoneLabel}
-            </label>
-            <input
-              id="wa-phone-input"
-              type="tel"
-              value={waPrefs.phoneNumber}
-              onChange={(e) => setWaPrefs((p) => ({ ...p, phoneNumber: e.target.value }))}
-              placeholder={t.notifications.whatsappPhonePlaceholder}
-              className="w-full max-w-md min-h-[44px] rounded-lg border border-[#E4DFD5] bg-[#FAF8F5] px-3.5 py-2 text-base font-mono-code text-[#10233D]"
-            />
-          </div>
-
-          <div className="space-y-2.5">
-            <label className="flex items-start gap-2.5 text-sm text-[#10233D] cursor-pointer">
-              <input
-                type="checkbox"
-                checked={waPrefs.consentGiven}
-                onChange={(e) =>
-                  setWaPrefs((p) => ({
-                    ...p,
-                    consentGiven: e.target.checked,
-                    optedOut: e.target.checked ? false : p.optedOut,
-                    enabled: e.target.checked ? p.enabled : false,
-                  }))
-                }
-                className="h-5 w-5 mt-0.5 accent-[#1E6F5C]"
-              />
-              <span>{t.notifications.whatsappConsentLabel}</span>
-            </label>
-
-            <label className="flex items-center gap-2.5 text-sm font-semibold text-[#10233D] cursor-pointer">
-              <input
-                type="checkbox"
-                disabled={!waPrefs.consentGiven}
-                checked={waPrefs.enabled && waPrefs.consentGiven && !waPrefs.optedOut}
-                onChange={(e) =>
-                  setWaPrefs((p) => ({ ...p, enabled: e.target.checked, optedOut: false }))
-                }
-                className="h-5 w-5 accent-[#1E6F5C] disabled:opacity-50"
-              />
-              <span>{t.notifications.whatsappEnableToggle}</span>
-            </label>
-          </div>
-
-          <div className="space-y-2 pt-2 border-t border-[#E4DFD5]">
-            <div className="text-sm font-semibold text-[#10233D]">
-              {t.notifications.whatsappCategoriesTitle}
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-sm text-[#334E68]">
-              <label className="inline-flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={waPrefs.categories.medicationReminders}
-                  onChange={(e) =>
-                    setWaPrefs((p) => ({
-                      ...p,
-                      categories: { ...p.categories, medicationReminders: e.target.checked },
-                    }))
-                  }
-                  className="h-4 w-4 accent-[#1E6F5C]"
-                />
-                <span>{t.notifications.whatsappCatMed}</span>
-              </label>
-
-              <label className="inline-flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={waPrefs.categories.appointmentReminders}
-                  onChange={(e) =>
-                    setWaPrefs((p) => ({
-                      ...p,
-                      categories: { ...p.categories, appointmentReminders: e.target.checked },
-                    }))
-                  }
-                  className="h-4 w-4 accent-[#1E6F5C]"
-                />
-                <span>{t.notifications.whatsappCatAppt}</span>
-              </label>
-
-              {canManage && (
-                <label className="inline-flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={waPrefs.categories.missedDoseAlerts}
-                    onChange={(e) =>
-                      setWaPrefs((p) => ({
-                        ...p,
-                        categories: { ...p.categories, missedDoseAlerts: e.target.checked },
-                      }))
-                    }
-                    className="h-4 w-4 accent-[#1E6F5C]"
-                  />
-                  <span>{t.notifications.whatsappCatMissed}</span>
-                </label>
-              )}
-
-              <label className="inline-flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={waPrefs.categories.familyUpdates}
-                  onChange={(e) =>
-                    setWaPrefs((p) => ({
-                      ...p,
-                      categories: { ...p.categories, familyUpdates: e.target.checked },
-                    }))
-                  }
-                  className="h-4 w-4 accent-[#1E6F5C]"
-                />
-                <span>{t.notifications.whatsappCatFamily}</span>
-              </label>
-            </div>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-3 pt-2">
-            <button
-              type="submit"
-              disabled={savingWa}
-              className="min-h-[44px] px-5 py-2.5 rounded-lg bg-[#1E6F5C] hover:bg-[#175849] text-white text-sm font-semibold disabled:opacity-50 cursor-pointer"
-            >
-              {savingWa ? t.common.saving : t.notifications.whatsappSavePrefs}
-            </button>
-
-            <button
-              type="button"
-              disabled={savingWa}
-              onClick={() => void handleOptOutWhatsApp()}
-              className="min-h-[44px] px-4 py-2.5 rounded-lg border border-[#FECDCA] bg-[#FEF3F2] hover:bg-[#FDE6E4] text-sm font-semibold text-[#B42318] disabled:opacity-50 cursor-pointer"
-            >
-              {t.notifications.whatsappOptOutBtn}
-            </button>
-          </div>
-        </form>
+        <div className="rounded-lg border border-[#E4DFD5] bg-[#FAF8F5] p-4 text-sm text-[#334E68] space-y-2">
+          <p className="font-medium text-[#10233D]">
+            {t.notifications.whatsappComingSoonDesc}
+          </p>
+          <p className="text-xs text-[#5B728A]">
+            {t.notifications.whatsappPrivacyNoteClean}
+          </p>
+        </div>
       </section>
 
       {feedback && (
