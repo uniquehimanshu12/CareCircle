@@ -1,3 +1,4 @@
+typescript
 import 'dotenv/config';
 import express, { type Request, type Response, type NextFunction, type Express } from 'express';
 import fs from 'fs';
@@ -46,7 +47,6 @@ const ALLOWED_WA_CATEGORIES = new Set<keyof StoredWhatsAppPreferences['categorie
   'familyUpdates',
 ]);
 
-// Server-controlled safe utility templates (client cannot supply arbitrary prompt text)
 const SAFE_WHATSAPP_TEMPLATES: Record<keyof StoredWhatsAppPreferences['categories'], string> = {
   medicationReminders: 'You have a scheduled CareCircle medication reminder. Open CareCircle to review.',
   appointmentReminders: 'You have an upcoming CareCircle appointment reminder. Open CareCircle for details.',
@@ -440,12 +440,6 @@ function escapeHtml(str: string): string {
     .replace(/'/g, '&#39;');
 }
 
-// ---------------------------------------------------------
-// Ephemeral Server Runtime Store (Non-Durable; /tmp only)
-// NOTE: /tmp storage does NOT survive container restarts or scale-out across instances.
-// Sensitive features requiring durable consent/opt-out persistence (live WhatsApp dispatch)
-// remain disabled until consent records are stored in a durable database.
-// ---------------------------------------------------------
 const DEFAULT_RUNTIME_STORE_PATH = '/tmp/carecircle-runtime-prefs.json';
 
 interface StoredWhatsAppPreferences {
@@ -551,7 +545,6 @@ function createRuntimeStoreManager(storePath: string) {
       writeAtomic(current);
       return result;
     });
-    // Keep queue alive even if a single operation throws
     writeQueue = task.then(
       () => undefined,
       () => undefined
@@ -600,9 +593,6 @@ function defaultWhatsAppPrefs(): StoredWhatsAppPreferences {
   };
 }
 
-// ---------------------------------------------------------
-// In-Memory Scheduled Notification Registry (Backend Timer)
-// ---------------------------------------------------------
 interface RegisteredSchedule {
   circleId: string;
   circleName: string;
@@ -773,7 +763,6 @@ async function evaluateAndDispatchCircleReminders(
     }
   };
 
-  // 1. Medication Reminders (Upcoming & Unconfirmed / Missed)
   for (const med of circle.medications) {
     if (!med.active) continue;
     if (dateKey < med.startDate) continue;
@@ -828,7 +817,6 @@ async function evaluateAndDispatchCircleReminders(
     }
   }
 
-  // 2. Upcoming Appointment Reminders (Today or Tomorrow)
   for (const appt of circle.appointments) {
     if (appt.status !== 'upcoming') continue;
     if (appt.appointmentDate !== dateKey && appt.appointmentDate !== tomorrowKey) continue;
@@ -874,7 +862,6 @@ export function createCareCircleApp(deps: ServerDependencies = {}): Express {
     deps.runtimeStorePath ?? DEFAULT_RUNTIME_STORE_PATH
   );
 
-  // Sliding-window WhatsApp rate limiter: max 5 requests per 60s per (uid, circleId)
   const waRateLimitBuckets = new Map<string, number[]>();
   const WA_RATE_LIMIT_MAX = 5;
   const WA_RATE_LIMIT_WINDOW_MS = 60_000;
@@ -894,7 +881,6 @@ export function createCareCircleApp(deps: ServerDependencies = {}): Express {
     return true;
   };
 
-  // Sliding-window test-email rate limiter: max 3 per 300s per uid
   const testEmailRateLimitBuckets = new Map<string, number[]>();
   const TEST_EMAIL_RATE_LIMIT_MAX = 3;
   const TEST_EMAIL_RATE_LIMIT_WINDOW_MS = 300_000;
@@ -913,7 +899,6 @@ export function createCareCircleApp(deps: ServerDependencies = {}): Express {
     return true;
   };
 
-  // Sliding-window send-email rate limiter: max 10 per 600s per (uid, circleId)
   const sendEmailRateLimitBuckets = new Map<string, number[]>();
   const SEND_EMAIL_RATE_LIMIT_MAX = 10;
   const SEND_EMAIL_RATE_LIMIT_WINDOW_MS = 600_000;
@@ -1040,9 +1025,6 @@ export function createCareCircleApp(deps: ServerDependencies = {}): Express {
     });
   });
 
-  // -------------------------------------------------------
-  // AI Prescription Scanner (Gemini 4 Hydrogen)
-  // -------------------------------------------------------
   app.post('/api/ai/scan-prescription', requireAuth, async (req: AuthedRequest, res: Response) => {
     try {
       const { imageBase64, mimeType } = req.body as {
@@ -1136,9 +1118,6 @@ export function createCareCircleApp(deps: ServerDependencies = {}): Express {
     }
   });
 
-  // -------------------------------------------------------
-  // Smart Care Assistant (Grounded in Real Firestore Records)
-  // -------------------------------------------------------
   app.post('/api/ai/care-assistant', requireAuth, async (req: AuthedRequest, res: Response) => {
     try {
       const { question, history, circleContext, responseLanguage } = req.body as {
@@ -1218,9 +1197,6 @@ export function createCareCircleApp(deps: ServerDependencies = {}): Express {
     }
   });
 
-  // -------------------------------------------------------
-  // Notification System & Real Backend SMTP Email Delivery
-  // -------------------------------------------------------
   app.get('/api/notifications/status', requireAuth, async (_req: AuthedRequest, res: Response) => {
     const smtp = getSmtpConfig();
     const verification = await verifySmtpConnection();
@@ -1409,9 +1385,6 @@ export function createCareCircleApp(deps: ServerDependencies = {}): Express {
     res.json(summary);
   });
 
-  // -------------------------------------------------------
-  // User Preferences (Ephemeral Runtime Language Cache)
-  // -------------------------------------------------------
   app.get('/api/user/preferences', requireAuth, (req: AuthedRequest, res: Response) => {
     const uid = req.user?.uid;
     if (!isSafeIdentifier(uid)) {
@@ -1445,10 +1418,6 @@ export function createCareCircleApp(deps: ServerDependencies = {}): Express {
     res.json({ preferredLanguage, updatedAt });
   });
 
-  // -------------------------------------------------------
-  // Official Meta WhatsApp Cloud API Status & Preferences
-  // Live dispatch explicitly disabled until durable consent DB is deployed.
-  // -------------------------------------------------------
   app.get('/api/notifications/whatsapp/status', requireAuth, (_req: AuthedRequest, res: Response) => {
     const cfg = getWhatsAppConfig();
     res.json({
@@ -1612,13 +1581,11 @@ export function createCareCircleApp(deps: ServerDependencies = {}): Express {
       return;
     }
 
-    // Server-controlled template text (kept here to document non-client-controlled contract)
     const _serverTemplateText = SAFE_WHATSAPP_TEMPLATES[typedCategory];
     const _recipientDigits = normalizePhoneDigits(prefs.phoneNumber);
     void _serverTemplateText;
     void _recipientDigits;
 
-    // Live dispatch is explicitly disabled until consent & opt-out records are stored in a durable DB
     res.status(503).json({
       delivered: false,
       status: 'dispatch_disabled_ephemeral_storage',
@@ -1627,9 +1594,6 @@ export function createCareCircleApp(deps: ServerDependencies = {}): Express {
     });
   });
 
-  // -------------------------------------------------------
-  // Medication Refill Stock Tracking
-  // -------------------------------------------------------
   app.get('/api/care/refills/:circleId', requireAuth, async (req: AuthedRequest, res: Response) => {
     const { circleId } = req.params;
     const member = await verifyCircleMembership(req, res, circleId, {
@@ -1721,15 +1685,14 @@ export function createCareCircleApp(deps: ServerDependencies = {}): Express {
 
 async function startServer() {
   const app = createCareCircleApp();
-  const PORT = 3000;
+
+  // Render provides PORT. Local development falls back to 3000.
+  const PORT = Number(process.env.PORT) || 3000;
 
   setInterval(() => {
     void runScheduledReminderTick();
   }, 60 * 1000);
 
-  // -------------------------------------------------------
-  // Vite Dev Middleware or Static Production Serving
-  // -------------------------------------------------------
   if (process.env.NODE_ENV !== 'production') {
     const { createServer: createViteServer } = await import('vite');
     const vite = await createViteServer({
@@ -1746,7 +1709,7 @@ async function startServer() {
   }
 
   app.listen(PORT, '0.0.0.0', () => {
-    console.log(`CareCircle server listening on http://localhost:${PORT}`);
+    console.log(`CareCircle server listening on port ${PORT}`);
     void verifySmtpConnection();
   });
 }
