@@ -1,0 +1,79 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --cc-canvas: #FAF8F5;
+    --cc-surface: #FFFFFF;
+    --cc-surface-subtle: #F3EFE8;
+    --cc-border: #E4DFD5;
+    --cc-navy: #10233D;
+    --cc-navy-secondary: #334E68;
+    --cc-navy-muted: #5B728A;
+    --cc-green: #1E6F5C;
+    --cc-green-hover: #175849;
+    --cc-green-soft: #EBF5F1;
+    --cc-orange: #D96B27;
+    --cc-orange-soft: #FDF2EA;
+    --cc-red: #B42318;
+    --cc-red-soft: #FEF3F2;
+  }
+
+  html {
+    font-family: 'DM Sans', 'Noto Sans Devanagari', system-ui, -apple-system, sans-serif;
+    background-color: var(--cc-canvas);
+    color: var(--cc-navy);
+    scroll-behavior: smooth;
+  }
+
+  h1, h2, h3, h4, .font-display {
+    font-family: 'Plus Jakarta Sans', 'Noto Sans Devanagari', system-ui, -apple-system, sans-serif;
+    text-wrap: balance;
+  }
+
+  .font-mono, .tabular-nums {
+    font-variant-numeric: tabular-nums;
+  }
+
+  .font-mono-code {
+    font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
+    font-variant-numeric: tabular-nums;
+  }
+
+  *:focus-visible {
+    outline: 3px solid #1E6F5C;
+    outline-offset: 2px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+@media print {
+  body {
+    background: #FFFFFF !important;
+    color: #10233D !important;
+  }
+
+  aside,
+  header,
+  .no-print {
+    display: none !important;
+  }
+
+  .care-summary-backdrop {
+    position: static !important;
+    background: #FFFFFF !important;
+    padding: 0 !important;
+  }
+
+  .care-summary-print-root {
+    border: none !important;
+    box-shadow: none !important;
+    max-width: 100% !important;
+  }
+}

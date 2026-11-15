@@ -1,0 +1,6 @@
+{
+  "name": "CareCircle",
+  "description": "CareCircle — Better care. Together. AI-powered elderly care, medication management, appointment tracking, and collaborative family care coordination.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
