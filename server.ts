@@ -1,4 +1,3 @@
-typescript
 import 'dotenv/config';
 import express, { type Request, type Response, type NextFunction, type Express } from 'express';
 import fs from 'fs';
